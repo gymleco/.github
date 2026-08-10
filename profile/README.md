@@ -11,8 +11,8 @@
 
 | 저장소 | 스택 | 역할 |
 |---|---|---|
-| **gymleco-fe** | Next.js 16 · TypeScript · Tailwind v4 · GSAP | 공개 사이트 + 관리자 CMS |
-| **gymleco-be** | Spring Boot 4 · Java 21 · PostgreSQL | API · 인증 · 이미지 파이프라인 |
+| **FE** | Next.js 16 · TypeScript · Tailwind v4 · GSAP | 공개 사이트 + 관리자 CMS |
+| **BE** | Spring Boot 4 · Java 21 · PostgreSQL | API · 인증 · 이미지 파이프라인 |
 
 ### 핵심 경험
 
@@ -26,6 +26,4 @@ JS 없이도, 모션을 껐어도, 모바일에서도.
 - **개인정보는 한 테이블에만** — 분산되면 파기·접근제어·감사에서 반드시 하나를 빠뜨린다
 - **실패는 안전한 방향으로** — 시크릿 스캐너가 없으면 커밋을 막고, 연출이 깨지면 정적 목록으로 남는다
 
-📄 [설계 문서 보기]([https://claude.ai/code/artifact/b1b2ae31-72e6-410c-9307-bda7331a7257])\
-[https://claude.ai/code/artifact/b1b2ae31-72e6-410c-9307-bda7331a7257]
-
+📄 [설계 문서 보기](https://github.com/gymleco/.github/tree/main/docs) · [화면 설계 도면집](https://claude.ai/code/artifact/b1b2ae31-72e6-410c-9307-bda7331a7257)

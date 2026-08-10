@@ -1,6 +1,6 @@
 # DB 구조
 
-실제 스키마: [`src/main/resources/db/migration/V1__init.sql`](https://github.com/GYMLECO-KOREA/gymleco-be/blob/main/src/main/resources/db/migration/V1__init.sql) (gymleco-be)
+실제 스키마: [`src/main/resources/db/migration/V1__init.sql`](https://github.com/gymleco/BE/blob/main/src/main/resources/db/migration/V1__init.sql) (BE)
 
 스키마의 소유자는 **Flyway** 입니다. Hibernate 는 `ddl-auto: validate` 로만 동작합니다.
 `update` 로 두면 운영 DB 가 코드 변경에 따라 조용히 바뀝니다.
@@ -120,6 +120,156 @@ erDiagram
         text value
     }
 ```
+
+---
+
+## 테이블 명세
+
+`NN` = NOT NULL · `UK` = UNIQUE · `FK` = 외래키
+
+### `product` — 제품
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK, identity | |
+| `slug` | `VARCHAR(120)` | NN, UK | URL 에 노출. 소문자·숫자·하이픈만 (CHECK) |
+| `name_ko` / `name_en` | `VARCHAR(120)` | NN | |
+| `category` | `VARCHAR(20)` | NN, CHECK | `STRENGTH` `CABLE` `RACK` `BENCH` `CARDIO` |
+| `summary` | `VARCHAR(200)` | NN | 쇼케이스 한 줄 특징 |
+| `description` | `TEXT` | NN | **살균된 HTML 만** |
+| `footprint_m2` | `NUMERIC(6,2)` | NN, `> 0` | ★ 핵심 소구점 |
+| `width_mm` `depth_mm` `height_mm` | `INTEGER` | NN, `> 0` | |
+| `weight_kg` | `NUMERIC(7,2)` | NN, `> 0` | |
+| `thumbnail_key` | `VARCHAR(255)` | | 오브젝트 스토리지 키 |
+| `sort_order` | `INTEGER` | NN, 기본 0 | 관리자가 지정 |
+| `visible` | `BOOLEAN` | NN, **기본 FALSE** | 미완성 제품이 실수로 공개되지 않게 |
+| `created_at` `updated_at` | `TIMESTAMPTZ` | NN | |
+
+### `product_image` — 갤러리
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `product_id` | `BIGINT` | NN, FK → `product` | `ON DELETE CASCADE` |
+| `image_key` | `VARCHAR(255)` | NN | |
+| `alt_text` | `VARCHAR(200)` | NN | 접근성. 비워도 되지만 컬럼은 강제 |
+| `sort_order` | `INTEGER` | NN | |
+
+### `news` — 소식
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `slug` | `VARCHAR(140)` | NN, UK | |
+| `title` | `VARCHAR(200)` | NN | |
+| `body` | `TEXT` | NN | **살균된 HTML 만** |
+| `thumbnail_key` | `VARCHAR(255)` | | |
+| `published_at` | `TIMESTAMPTZ` | | 예약 발행 가능 |
+| `visible` | `BOOLEAN` | NN, 기본 FALSE | |
+
+> CHECK `NOT visible OR published_at IS NOT NULL`
+> 발행일 없이 공개 상태가 될 수 없습니다.
+
+### `inquiry` — 문의 ★ 개인정보
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `type` | `VARCHAR(20)` | NN, CHECK | `QUOTE` `DEMO` `OFFICIAL` `ETC` |
+| `name` | `VARCHAR(80)` | NN | **개인정보.** 목록에서는 마스킹 |
+| `phone_encrypted` | `TEXT` | NN | **AES-256-GCM (base64).** 평문 금지 |
+| `phone_blind_index` | `BYTEA` | | **HMAC-SHA256.** 검색 전용 |
+| `email` | `VARCHAR(160)` | | 개인정보 |
+| `company` | `VARCHAR(120)` | | |
+| `region` | `VARCHAR(60)` | | |
+| `message` | `TEXT` | NN | |
+| `status` | `VARCHAR(20)` | NN, CHECK | `NEW` `CONTACTING` `DONE` `SPAM` |
+| `memo` | `TEXT` | NN | 관리자 메모. 열람 청구 대상이 될 수 있음 |
+| `consent_at` | `TIMESTAMPTZ` | **NN** | ★ 없으면 저장 자체가 불가 |
+| `marketing_consent_at` | `TIMESTAMPTZ` | | 선택. 필수 동의와 분리 |
+| `purge_at` | `TIMESTAMPTZ` | NN, `> consent_at` | ★ 자동 파기 기준 |
+| `source_ip` | `INET` | | 스팸 분석용. 파기 대상에 포함 |
+| `user_agent` | `VARCHAR(400)` | | |
+
+> `consent_at` 을 NOT NULL 로 둔 것이 핵심입니다.
+> 코드에 실수가 있어도 **동의 없는 개인정보가 DB 에 들어갈 수 없습니다.**
+
+### `inquiry_product` — 문의 ↔ 제품
+
+| 컬럼 | 타입 | 제약 |
+|---|---|---|
+| `inquiry_id` | `BIGINT` | PK, FK → `inquiry` CASCADE |
+| `product_id` | `BIGINT` | PK, FK → `product` CASCADE |
+
+### `admin_user` — 관리자
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `username` | `VARCHAR(60)` | NN, UK | |
+| `password_hash` | `VARCHAR(100)` | NN, **CHECK `^\$2[aby]\$`** | ★ BCrypt 만 |
+| `display_name` | `VARCHAR(60)` | NN | |
+| `role` | `VARCHAR(20)` | NN, CHECK | `ADMIN` `EDITOR` |
+| `enabled` | `BOOLEAN` | NN | |
+| `totp_secret_encrypted` | `TEXT` | | 2FA 시크릿도 암호화 |
+| `totp_enabled` | `BOOLEAN` | NN | |
+| `last_login_at` `last_login_ip` | `TIMESTAMPTZ` `INET` | | 새 IP 로그인 알림용 |
+| `password_changed_at` | `TIMESTAMPTZ` | NN | |
+
+> CHECK 제약으로 **MD5·SHA·평문이 DB 레벨에서 거부됩니다.**
+> 실제 PostgreSQL 17 에 적용해 거부되는 것을 확인했습니다.
+
+### `admin_refresh_token` — 세션
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `admin_user_id` | `BIGINT` | NN, FK CASCADE | |
+| `token_hash` | `BYTEA` | NN, UK | **토큰 원본이 아님.** DB 유출로 세션 탈취 불가 |
+| `issued_at` `expires_at` | `TIMESTAMPTZ` | NN | |
+| `revoked_at` | `TIMESTAMPTZ` | | 로그아웃 시 기록 |
+| `replaced_by` | `BIGINT` | FK (self) | **재사용 감지.** 회전 추적 |
+| `user_agent` `ip` | `VARCHAR(400)` `INET` | | |
+
+### `login_attempt` — 로그인 시도
+
+| 컬럼 | 타입 | 제약 |
+|---|---|---|
+| `id` | `BIGINT` | PK |
+| `username` | `VARCHAR(60)` | NN |
+| `ip` | `INET` | NN |
+| `successful` | `BOOLEAN` | NN |
+| `attempted_at` | `TIMESTAMPTZ` | NN |
+
+> **IP 기준을 1차 방어로 씁니다.** 계정 전면 잠금만 두면 공격자가
+> 아무 비밀번호나 반복해 대표님을 상시 차단할 수 있습니다(가용성 DoS).
+
+### `admin_audit_log` — 감사 로그
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `admin_user_id` | `BIGINT` | FK `SET NULL` | 계정이 지워져도 로그는 남는다 |
+| `admin_username` | `VARCHAR(60)` | NN | 이름을 문자열로도 박아둠 |
+| `action` | `VARCHAR(60)` | NN | `INQUIRY_VIEW` `INQUIRY_EXPORT_CSV` 등 |
+| `target_type` `target_id` | `VARCHAR(40)` `VARCHAR(60)` | | |
+| `detail` | `TEXT` | NN | ★ 비밀번호·토큰·전화번호 평문 금지 |
+| `ip` `user_agent` | `INET` `VARCHAR(400)` | | |
+
+> 보관 기간 **최소 3개월.** 개인정보 조회와 CSV 내보내기도 기록합니다.
+
+### `site_setting` — 설정
+
+| 컬럼 | 타입 | 제약 |
+|---|---|---|
+| `key` | `VARCHAR(80)` | PK |
+| `value` | `TEXT` | NN |
+
+주요 키: `contact.*` `company.*` `sns.*` `home.hero_product_slugs`
+`home.banner_text` `privacy.retention_notice`
+
+> 공개 API 는 이 테이블을 통째로 반환하지 않습니다.
+> **공개해도 되는 키만 화이트리스트로** 내보냅니다.
 
 ---
 

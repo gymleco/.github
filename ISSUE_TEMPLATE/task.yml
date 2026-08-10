@@ -1,0 +1,54 @@
+name: 작업
+description: 만들어야 할 것 / 바꿔야 할 것
+labels: [task]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 무엇을 · 왜
+      placeholder: |
+        무엇을 만드는지, 그리고 왜 필요한지.
+        "왜" 가 있으면 나중에 이 이슈를 다시 볼 때 판단이 쉬워집니다.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: 단계
+      options:
+        - Phase 0 — 자산·설계
+        - Phase 1 — 프로토타입
+        - Phase 2 — 백엔드·CMS
+        - Phase 3 — 프론트 전체
+        - Phase 4 — 배포·인수인계
+        - 범위 밖 (2차)
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 기준
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: 보안 검토가 필요한가
+      options:
+        - label: 개인정보를 다룬다 (이름·전화·이메일)
+        - label: 인증·권한에 손을 댄다
+        - label: 사용자 입력을 저장하거나 렌더한다
+        - label: 파일 업로드·내보내기를 다룬다
+        - label: 해당 없음
+
+  - type: input
+    id: decision
+    attributes:
+      label: 관련 결정
+      placeholder: "docs/OPEN-DECISIONS.md 의 D-번호 (있으면)"

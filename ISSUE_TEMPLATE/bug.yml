@@ -1,0 +1,57 @@
+name: 버그
+description: 동작이 기대와 다릅니다
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **개인정보를 붙여넣지 마세요.** 실제 문의자의 이름·전화·이메일이
+        스크린샷이나 로그에 들어가지 않았는지 확인해 주세요.
+        필요하면 마스킹해서 올려 주세요.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 무엇이 잘못됐나
+      placeholder: 기대한 동작과 실제 동작
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 방법
+      placeholder: |
+        1. /products 접속
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 어디에서
+      options:
+        - 공개 사이트 (www)
+        - 관리자 CMS (admin)
+        - API
+        - 배포·인프라
+        - 잘 모르겠음
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: 환경
+      placeholder: "Chrome 141 / iPhone 15 Safari / Windows 11"
+
+  - type: checkboxes
+    id: severity
+    attributes:
+      label: 해당하면 체크
+      options:
+        - label: 개인정보가 노출됐거나 노출될 수 있다
+        - label: 관리자 인증을 우회할 수 있다
+        - label: 방문자가 사이트를 이용할 수 없다

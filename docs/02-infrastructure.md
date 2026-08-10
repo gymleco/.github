@@ -147,7 +147,7 @@ sequenceDiagram
 작은 인스턴스에서 OOM 이 납니다. CI 에서 빌드하고 산출물만 내려받습니다.
 
 운영은 Docker Compose 로 합니다. 쿠버네티스 매니페스트는
-[`k8s/`](https://github.com/GYMLECO-KOREA/gymleco-be/blob/main/k8s) 에 산출물로 두되 운영에 쓰지 않습니다 —
+[`k8s/`](https://github.com/gymleco/BE/blob/main/k8s) 에 산출물로 두되 운영에 쓰지 않습니다 —
 사이트 하나에 클러스터를 붙이면 비용과 인수인계 부담만 늘어납니다.
 
 ---

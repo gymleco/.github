@@ -12,8 +12,8 @@ GYMLECO KOREA 조직의 공용 저장소입니다.
 
 | 저장소 | 내용 |
 |---|---|
-| [`gymleco-fe`](../../../gymleco-fe) | 공개 사이트(Next.js) + 관리자 CMS(Vite) |
-| [`gymleco-be`](../../../gymleco-be) | API 서버 (Spring Boot 4 / Java 21) |
+| [`FE`](../../../FE) | 공개 사이트(Next.js) + 관리자 CMS(Vite) |
+| [`BE`](../../../BE) | API 서버 (Spring Boot 4 / Java 21) |
 | `.github` | 이 저장소 — 템플릿과 설계 문서 |
 
 ---
@@ -26,6 +26,7 @@ GYMLECO KOREA 조직의 공용 저장소입니다.
 | [인프라 구조](docs/02-infrastructure.md) | 배포 구성, 요청 경로, 비용 |
 | [DB 구조](docs/03-database.md) | ERD, 개인정보 처리 방식, 트랜잭션 방침 |
 | [화면 설계](docs/04-screens.md) | 사이트맵, 스크롤 구조, 문의 폼, 관리자 |
+| [API 명세](docs/05-api-spec.md) | 엔드포인트, 인증 흐름, 개인정보 취급 |
 | [미결 사항](docs/OPEN-DECISIONS.md) | 구조를 정하기 전에 확인 |
 | [보안 체크리스트](docs/SECURITY-CHECKLIST.md) | 배포 전, 보안 코드를 건드릴 때 |
 | [클라이언트 확인 항목](docs/PHASE0-CLIENT-QUESTIONS.md) | 대표님께 그대로 전달 가능 |
@@ -48,3 +49,4 @@ GYMLECO KOREA 조직의 공용 저장소입니다.
 
 이 파일들은 두 저장소에 복제돼 있습니다. **한쪽만 고치면 어긋납니다** —
 보안 설정을 바꿀 때는 양쪽을 함께 수정하세요.
+# .github

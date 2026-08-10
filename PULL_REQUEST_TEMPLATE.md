@@ -15,7 +15,7 @@
 
 - [ ] **관리 API 를 추가했다** → `@PreAuthorize("hasRole('ADMIN')")` 를 붙였다
 - [ ] **사용자 입력을 저장한다** → 저장 시점에 살균했다 (허용목록 방식)
-- [ ] **개인정보를 다룬다** → [SECURITY-CHECKLIST](https://github.com/GYMLECO-KOREA/.github/blob/main/docs/SECURITY-CHECKLIST.md) 해당 항목을 다시 봤다
+- [ ] **개인정보를 다룬다** → [SECURITY-CHECKLIST](https://github.com/gymleco/.github/blob/main/docs/SECURITY-CHECKLIST.md) 해당 항목을 다시 봤다
 - [ ] **파일 업로드를 다룬다** → 시그니처 검증 + 재인코딩을 거친다
 - [ ] **CSV·엑셀로 내보낸다** → 인젝션 방어(`=`, `+`, `-`, `@` 이스케이프)를 적용했다
 - [ ] **외부를 호출한다** → 트랜잭션 커밋 이후에 호출한다
