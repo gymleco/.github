@@ -27,3 +27,5 @@ JS 없이도, 모션을 껐어도, 모바일에서도.
 - **실패는 안전한 방향으로** — 시크릿 스캐너가 없으면 커밋을 막고, 연출이 깨지면 정적 목록으로 남는다
 
 📄 [설계 문서 보기]([https://claude.ai/code/artifact/b1b2ae31-72e6-410c-9307-bda7331a7257])\
+[https://claude.ai/code/artifact/b1b2ae31-72e6-410c-9307-bda7331a7257]
+
