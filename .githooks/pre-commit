@@ -1,0 +1,103 @@
+#!/bin/sh
+# ══════════════════════════════════════════════════════════════
+#  gymleco — 커밋 전 시크릿 스캔
+# ══════════════════════════════════════════════════════════════
+#  이 훅은 스캐너가 없거나 스캐너가 실패해도 커밋을 통과시키지 않는다
+#  (fail-closed). 스캐너가 없을 때 조용히 통과하는 훅은 없는 것보다
+#  나쁘다 — "훅이 있으니 안전하겠지"라고 믿게 만들기 때문이다.
+#
+#  활성화:  git config core.hooksPath .githooks
+#  설치:    https://github.com/gitleaks/gitleaks/releases/latest
+#  Docker:  GITLEAKS_DOCKER=1 git commit ...
+# ══════════════════════════════════════════════════════════════
+
+ROOT=$(git rev-parse --show-toplevel)
+
+# 최초 커밋에는 비교할 HEAD 가 없다.
+# 이때 --staged 로 diff 를 뜨면 스캐너가 죽는다. 워킹 트리를 통째로 본다.
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  MODE="staged"
+else
+  MODE="initial"
+fi
+
+run_native() {
+  # gitleaks v8.19+ 는 protect/detect 를 git/dir 로 대체했다.
+  # 최신 명령을 먼저 시도하고, 없으면 구버전 명령으로 내려간다.
+  if gitleaks git --help >/dev/null 2>&1; then
+    if [ "$MODE" = "staged" ]; then
+      gitleaks git --staged --redact --no-banner "$ROOT"
+    else
+      gitleaks dir --redact --no-banner "$ROOT"
+    fi
+  else
+    gitleaks protect --staged --redact --no-banner
+  fi
+}
+
+run_docker() {
+  if [ "$MODE" = "staged" ]; then
+    SUB="git --staged"
+  else
+    SUB="dir"
+  fi
+  # shellcheck disable=SC2086
+  MSYS_NO_PATHCONV=1 docker run --rm \
+    -v "$ROOT":/repo -w /repo \
+    zricethezav/gitleaks:latest \
+    $SUB --redact --no-banner /repo
+}
+
+if command -v gitleaks >/dev/null 2>&1; then
+  run_native
+  STATUS=$?
+elif [ "${GITLEAKS_DOCKER}" = "1" ] && command -v docker >/dev/null 2>&1; then
+  run_docker
+  STATUS=$?
+else
+  cat >&2 <<'MSG'
+
+  ✋ 커밋이 차단됐습니다 — gitleaks 가 설치돼 있지 않습니다.
+
+     이 저장소는 시크릿 스캔 없이는 커밋할 수 없도록 설정돼 있습니다.
+
+     설치:    https://github.com/gitleaks/gitleaks/releases/latest
+     Docker:  GITLEAKS_DOCKER=1 git commit ...
+
+MSG
+  exit 1
+fi
+
+if [ $STATUS -eq 0 ]; then
+  exit 0
+fi
+
+# gitleaks 는 시크릿을 찾으면 1 로 끝난다.
+# 그 외 값은 스캐너 자체가 실패했다는 뜻이다 — 둘을 구분하지 않으면
+# 크래시를 "시크릿 발견"으로 잘못 읽고 엉뚱한 곳을 뒤지게 된다.
+if [ $STATUS -eq 1 ]; then
+  cat >&2 <<'MSG'
+
+  🚨 스테이징된 변경에서 시크릿으로 보이는 값이 발견됐습니다.
+
+     1. 해당 값을 코드에서 제거하고 .env 로 옮기세요.
+     2. 이미 어딘가에 노출된 적이 있는 키라면 삭제로 끝나지 않습니다.
+        반드시 재발급(로테이션) 하세요.
+     3. 오탐이라면 .gitleaks.toml 의 allowlist 를 좁게 수정하세요.
+        --no-verify 로 우회하지 마세요.
+
+MSG
+else
+  cat >&2 <<MSG
+
+  ⚠️ 시크릿 스캐너가 오류로 종료했습니다 (exit ${STATUS}).
+
+     시크릿이 발견된 것이 아니라 스캐너 자체가 실패한 것입니다.
+     스캔하지 못한 상태로 커밋을 통과시키지 않습니다.
+
+     gitleaks 버전을 확인하거나 위 출력을 확인하세요.
+
+MSG
+fi
+
+exit $STATUS

@@ -1,0 +1,35 @@
+# 줄바꿈 정규화 — 저장소에는 항상 LF 로 들어간다.
+# Windows 에서 작업하므로 이 파일이 없으면 CRLF 가 섞여 훅 스크립트가 깨진다.
+* text=auto eol=lf
+
+# 셸 스크립트는 반드시 LF (CRLF 면 Git Bash 가 실행하지 못한다)
+.githooks/* text eol=lf
+*.sh        text eol=lf
+gradlew     text eol=lf
+
+# Windows 배치는 CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+gradlew.bat text eol=crlf
+
+# 바이너리 — diff/머지 시도 금지
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.avif  binary
+*.gif   binary
+*.ico   binary
+*.mp4   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.pdf   binary
+*.jar   binary
+*.glb   binary
+*.gltf  binary
+
+# 락파일은 리뷰 diff 에서 접어둔다
+package-lock.json linguist-generated=true
+pnpm-lock.yaml    linguist-generated=true

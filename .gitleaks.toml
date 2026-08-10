@@ -1,0 +1,59 @@
+# gitleaks 설정 — 커밋 전 시크릿 스캔
+# 기본 룰셋(AWS 키, GitHub 토큰, 개인키 등 100여 종)을 그대로 쓰고
+# 이 프로젝트에서 실제로 쓰는 시크릿 형태만 추가한다.
+
+title = "gymleco"
+
+[extend]
+useDefault = true
+
+# ── 프로젝트 고유 룰 ────────────────────────────────────────
+
+[[rules]]
+id = "gymleco-jwt-secret"
+description = "JWT 시크릿이 코드/설정에 직접 박혔다"
+regex = '''(?i)(jwt[_.\-]?secret|jwt[_.\-]?signing[_.\-]?key)["'\s]*[:=]["'\s]*[A-Za-z0-9+/=_\-]{16,}'''
+tags = ["secret", "jwt"]
+
+[[rules]]
+id = "gymleco-pii-key"
+description = "문의자 개인정보 암호화 키가 노출됐다"
+regex = '''(?i)(pii[_.\-]?(encryption|blind[_.\-]?index)[_.\-]?key)["'\s]*[:=]["'\s]*[A-Za-z0-9+/=_\-]{16,}'''
+tags = ["secret", "pii"]
+
+[[rules]]
+id = "gymleco-db-url-inline-password"
+description = "DB 접속 URL 에 비밀번호가 포함됐다"
+regex = '''(?i)(jdbc:)?postgres(ql)?://[^\s:@/]+:[^\s@/'"]{4,}@'''
+tags = ["secret", "database"]
+
+[[rules]]
+id = "gymleco-spring-datasource-password"
+description = "spring.datasource.password 가 평문이다"
+# gitleaks 는 Go 의 RE2 엔진을 쓴다. 전방탐색 (?!...) 을 지원하지 않으므로
+# "${...} 가 아닌 값" 을 표현할 때는 첫 글자가 $ 가 아니라고 쓴다.
+# RE2 에서 lookahead 를 쓰면 설정 파싱 단계에서 스캐너가 패닉한다.
+regex = '''(?i)spring\.datasource\.password["'\s]*[:=]["'\s]*[^\s"'$][^\s"']{3,}'''
+tags = ["secret", "database"]
+
+# ── 예외 ───────────────────────────────────────────────────
+# 예외는 좁게 유지한다. 넓히는 순간 훅이 무의미해진다.
+
+[allowlist]
+description = "예시 파일과 자리표시자만 허용"
+
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.[a-z]+\.example$''',
+  '''\.gitleaks\.toml$''',
+  '''package-lock\.json$''',
+  '''pnpm-lock\.yaml$''',
+]
+
+# 자리표시자 문자열은 시크릿이 아니다
+regexes = [
+  '''(?i)change[_\-]?me''',
+  '''(?i)your[_\-][a-z_\-]{0,20}[_\-]here''',
+  '''(?i)(placeholder|dummy|example\.com|localhost)''',
+  '''(?i)x{6,}''',
+]
