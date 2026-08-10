@@ -8,7 +8,7 @@
 ---
 
 # 화면 설계
-
+https://claude.ai/code/artifact/b1b2ae31-72e6-410c-9307-bda7331a7257
 ## 사이트 구조
 
 ```mermaid
