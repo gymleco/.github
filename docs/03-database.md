@@ -13,19 +13,23 @@
 erDiagram
     product ||--o{ product_image : "갤러리"
     product ||--o{ inquiry_product : ""
+    product ||--o{ used_item : "중고 매물"
     inquiry ||--o{ inquiry_product : "관심 제품"
+    used_item ||--o{ used_item_image : ""
+    official_center ||--o{ official_center_image : ""
     admin_user ||--o{ admin_refresh_token : "세션"
     admin_user ||--o{ admin_audit_log : "행위"
 
     product {
         bigint id PK
         varchar slug UK "URL. 불변 취급"
+        varchar type "EQUIPMENT|PART|ACCESSORY"
+        varchar category "5종 + PART/ACCESSORY"
         varchar name_ko
         varchar name_en
-        varchar category "STRENGTH|CABLE|RACK|BENCH|CARDIO"
         varchar summary
         text description "살균된 HTML 만"
-        numeric footprint_m2 "★ 핵심 소구점"
+        numeric footprint_m2 "★ 기구만 필수"
         int width_mm
         int depth_mm
         int height_mm
@@ -33,6 +37,32 @@ erDiagram
         varchar thumbnail_key
         int sort_order
         boolean visible "기본 FALSE"
+    }
+
+    used_item {
+        bigint id PK
+        varchar slug UK
+        bigint product_id FK "단종이면 NULL"
+        varchar name_ko
+        varchar condition_grade "A|B|C"
+        smallint year_made
+        int price_krw "NULL 이면 가격 문의"
+        varchar status "AVAILABLE|RESERVED|SOLD"
+        smallint quantity
+        boolean visible
+    }
+
+    official_center {
+        bigint id PK
+        varchar slug UK
+        varchar name
+        varchar region
+        varchar address
+        numeric latitude
+        numeric longitude
+        smallint area_pyeong
+        timestamptz consent_at "★ 없으면 공개 불가"
+        boolean visible
     }
 
     product_image {
@@ -270,6 +300,62 @@ erDiagram
 
 > 공개 API 는 이 테이블을 통째로 반환하지 않습니다.
 > **공개해도 되는 키만 화이트리스트로** 내보냅니다.
+
+### `used_item` — 중고 매물
+
+카탈로그가 아니라 **개별 물건**입니다. 같은 파워 랙이라도 2019년식과
+2022년식은 다른 매물이고, 하나가 팔려도 다른 하나는 남습니다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `slug` | `VARCHAR(140)` | NN, UK | |
+| `product_id` | `BIGINT` | FK `SET NULL` | 카탈로그 연결. 단종 모델이면 NULL |
+| `name_ko` | `VARCHAR(140)` | NN | |
+| `model_name` | `VARCHAR(140)` | NN | 제품이 지워져도 무엇이었는지 남긴다 |
+| `condition_grade` | `VARCHAR(10)` | NN, CHECK | `A` 상급 / `B` 중급 / `C` 하급 |
+| `year_made` | `SMALLINT` | 1980~2100 | 정확한 날짜를 모르는 경우가 많아 연도만 |
+| `price_krw` | `INTEGER` | `> 0` | **NULL 이면 "가격 문의"** |
+| `status` | `VARCHAR(20)` | NN, CHECK | `AVAILABLE` `RESERVED` `SOLD` |
+| `quantity` | `SMALLINT` | NN, `>= 0` | 같은 상태 물건이 여러 대일 수 있다 |
+
+> 판매완료 매물도 목록에서 지우지 않고 뒤로 보냅니다.
+> 팔린 것이 보여야 "물건이 도는 곳"으로 읽힙니다.
+
+### `official_center` — 짐레코 공식 헬스장
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| `id` | `BIGINT` | PK | |
+| `slug` | `VARCHAR(140)` | NN, UK | |
+| `name` `region` | `VARCHAR` | NN | |
+| `address` | `VARCHAR(255)` | NN | |
+| `latitude` `longitude` | `NUMERIC(9,6)` | 함께 있거나 함께 없어야 함 | 지도 표시용 |
+| `phone` `website_url` `instagram_url` | `VARCHAR` | NN, 기본 `''` | |
+| `area_pyeong` | `SMALLINT` | `> 0` | |
+| `consent_at` | `TIMESTAMPTZ` | **공개하려면 필수** | ★ 게재 동의 |
+| `visible` | `BOOLEAN` | NN, 기본 FALSE | |
+
+> **CHECK `NOT visible OR consent_at IS NOT NULL`**
+>
+> 소규모 센터의 상호·주소·연락처는 개인정보에 해당할 수 있습니다.
+> 동의 없이 공개 상태가 되는 경로를 DB 가 막습니다.
+
+---
+
+## 마이그레이션 이력
+
+| 파일 | 내용 |
+|---|---|
+| `V1__init.sql` | 제품·소식·문의·관리자·감사 로그 기본 스키마 |
+| `V2__seed_site_setting.sql` | 사이트 설정 키 시드 |
+| `V3__product_type_used_center.sql` | 품목 종류(`type`) · 중고 · 공식 헬스장 · 문의 유형 확장 |
+
+**적용된 마이그레이션은 수정하지 않습니다.** 고치면 적용한 환경과
+적용하지 않은 환경의 스키마가 갈라집니다. 변경은 항상 새 `V{n}` 으로 추가합니다.
+
+CI 가 PR 마다 빈 PostgreSQL 17 에 전부 순차 적용하고, 보안상 중요한 제약이
+실제로 거부하는지까지 확인합니다.
 
 ---
 

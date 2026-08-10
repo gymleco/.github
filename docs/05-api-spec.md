@@ -94,6 +94,51 @@ GET /api/public/products/{slug}
 ```
 상세 + 갤러리 + 관련 제품.
 
+`type` 으로 품목을 가릅니다. 설치 면적은 `EQUIPMENT` 에만 있습니다.
+
+```http
+GET /api/public/products?type=EQUIPMENT     # 기구
+GET /api/public/products?type=PART          # 부품
+GET /api/public/products?type=ACCESSORY     # 악세사리
+```
+
+### 중고 매물
+
+```http
+GET /api/public/used
+GET /api/public/used/{slug}
+```
+```json
+{
+  "items": [
+    {
+      "slug": "used-power-rack-01",
+      "nameKo": "파워 랙",
+      "productSlug": "power-rack",
+      "conditionGrade": "A",
+      "yearMade": 2021,
+      "priceKrw": null,
+      "quantity": 1,
+      "status": "AVAILABLE"
+    }
+  ]
+}
+```
+
+- **판매완료 매물도 반환합니다.** 목록에서 지우지 않고 뒤로 보냅니다 —
+  팔린 것이 보여야 "물건이 도는 곳"으로 읽힙니다
+- `priceKrw` 가 `null` 이면 화면에 "가격 문의" 로 표시합니다.
+  0 이나 빈 문자열로 내리지 않습니다
+
+### 공식 헬스장
+
+```http
+GET /api/public/centers?region=서울
+```
+
+**`consent_at` 이 있는 센터만 반환합니다.** DB CHECK 로도 막혀 있지만
+쿼리 조건에도 명시합니다 — 방어는 한 겹에 의존하지 않습니다.
+
 ### 소식
 
 ```http
@@ -135,11 +180,25 @@ POST /api/public/inquiries
 
 | 필드 | 필수 | 비고 |
 |---|---|---|
+| `type` | ✔ | `QUOTE` `DEMO` `OFFICIAL` `USED` `PART` `ETC` |
 | `name` | ✔ | 최대 80자 |
 | `phone` | ✔ | 정규화 후 암호화 저장 |
 | `privacyConsent` | ✔ | **false 면 400.** 동의 없이 저장하지 않는다 |
 | `marketingConsent` | | 별도 항목. 필수 동의에 묶지 않는다 |
-| `website` | | **honeypot.** 채워져 있으면 봇 — 200 을 주고 버린다 |
+| `website` | | **honeypot.** 채워져 있으면 봇 — 201 을 주고 버린다 |
+
+문의 유형이 6종인 이유 — 중고 문의와 부품 문의는 응대 방식이 다릅니다.
+섞여 있으면 대표님이 접수함에서 매번 본문을 읽어야 합니다.
+
+**동의는 세 겹으로 강제합니다.**
+
+```
+@AssertTrue(privacyConsent)      ← 입력 검증
+      ↓
+Inquiry.receive(consentAt, ...)  ← 동의 없이 만들 수 있는 생성자가 없다
+      ↓
+consent_at NOT NULL              ← DB
+```
 
 honeypot 은 차단 사실을 알리지 않습니다. 400 을 주면 봇이 필드를 학습합니다.
 

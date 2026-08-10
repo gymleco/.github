@@ -36,21 +36,36 @@ run_docker() {
     git --staged --redact --no-banner /repo
 }
 
+# 네이티브 바이너리를 먼저 쓴다. 즉시 실행되고 IDE 에서도 동작한다.
+# 없으면 Docker 로 자동 폴백한다 — 환경변수를 매번 붙이지 않아도 되도록.
+#
+# ⚠️ Docker 폴백은 커밋마다 컨테이너를 띄워 2~3초가 걸리고,
+#    IDE 의 PATH 에 docker 가 없으면 동작하지 않는다.
+#    바이너리를 설치하는 편이 확실하다.
 if command -v gitleaks >/dev/null 2>&1; then
   run_native
   STATUS=$?
-elif [ "${GITLEAKS_DOCKER}" = "1" ] && command -v docker >/dev/null 2>&1; then
+elif command -v docker >/dev/null 2>&1; then
   run_docker
   STATUS=$?
+  if [ $STATUS -ne 0 ] && [ $STATUS -ne 1 ]; then
+    echo "  (Docker 로 스캔했습니다. Docker Desktop 이 실행 중인지 확인하세요)" >&2
+  fi
 else
   cat >&2 <<'MSG'
 
-  ✋ 커밋이 차단됐습니다 — gitleaks 가 설치돼 있지 않습니다.
+  ✋ 커밋이 차단됐습니다 — 시크릿 스캐너를 찾을 수 없습니다.
 
-     이 저장소는 시크릿 스캔 없이는 커밋할 수 없도록 설정돼 있습니다.
+     이 저장소는 스캔 없이는 커밋할 수 없도록 설정돼 있습니다.
+     스캐너 없이 통과시키는 훅은 없는 것보다 나쁘기 때문입니다.
 
-     설치:    https://github.com/gitleaks/gitleaks/releases/latest
-     Docker:  GITLEAKS_DOCKER=1 git commit ...
+     해결 (5분, 한 번만):
+       1. https://github.com/gitleaks/gitleaks/releases/latest 에서
+          gitleaks_x.x.x_windows_x64.zip 다운로드
+       2. gitleaks.exe 를 PATH 에 있는 폴더로 이동
+       3. 터미널과 IDE 재시작 후  gitleaks version  으로 확인
+
+     Docker 가 실행 중이면 자동으로 사용합니다.
 
 MSG
   exit 1

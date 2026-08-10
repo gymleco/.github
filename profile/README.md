@@ -14,18 +14,27 @@ https://claude.ai/code/artifact/b1b2ae31-72e6-410c-9307-bda7331a7257
 ```mermaid
 flowchart TD
     HOME["<b>/</b><br/>메인 — 스크롤 쇼케이스"]
-    PLIST["<b>/products</b><br/>제품 리스트"]
+    PLIST["<b>/products</b><br/>제품 라인업"]
     PDETAIL["<b>/products/[제품]</b><br/>제품 상세"]
+    USED["<b>/used</b><br/>중고 기구"]
+    PARTS["<b>/parts</b><br/>부품"]
+    ACC["<b>/accessories</b><br/>악세사리"]
+    CENTERS["<b>/centers</b><br/>공식 헬스장"]
     ABOUT["<b>/about</b><br/>브랜드"]
-    NEWS["<b>/news</b><br/>소식"]
     CONTACT["<b>/contact</b><br/>★ 문의"]
     DONE["접수 완료"]
 
     HOME --> PLIST --> PDETAIL
+    HOME --> USED
+    HOME --> PARTS
+    HOME --> ACC
+    HOME --> CENTERS
     HOME --> ABOUT
-    HOME --> NEWS
     HOME ==>|"화면 우하단<br/>상시 노출"| CONTACT
     PDETAIL ==>|"제품 선택된 채로"| CONTACT
+    USED ==> CONTACT
+    PARTS ==> CONTACT
+    CENTERS ==> CONTACT
     ABOUT ==> CONTACT
     CONTACT --> DONE
 
